@@ -201,7 +201,7 @@ app.post("/sendPacket", async (req, res) => {
           await node.save();
         }
       }
-    res.send("goof");
+    res.send("good");
 
   } catch (error) {
     console.error("Error in processing request:", error);
@@ -214,6 +214,8 @@ app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
 
+import fs from 'fs';
+// import path from 'path';
 
 app.post("/details", async (req, res) => {
     try {
@@ -240,12 +242,21 @@ app.post("/details", async (req, res) => {
             }
         }
 
+        // List image files in the uploads directory
+        const uploadsDir = path.join(__dirname, 'uploads');
+        const imageFiles = fs.readdirSync(uploadsDir);
+
+        // Pick a random image file
+        const randomImage = imageFiles[Math.floor(Math.random() * imageFiles.length)];
+        const randomImageUrl = `${req.protocol}://${req.get('host')}/uploads/${randomImage}`;
+        console.log(randomImageUrl);
         // Prepare the response data
         const data = {
             uptime: user.uptime,
             cpuUsage: node.cpuUsage,
             friendList: friendList,
-            track : node.track
+            track: node.track,
+            randomImage: randomImageUrl // Add the random image URL to the response data
         };
 
         // Send the response
@@ -255,6 +266,63 @@ app.post("/details", async (req, res) => {
         res.status(500).send("Internal Server Error");
     }
 });
+
+// Middleware to serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.get("/allUser", async (req, res) => {
+    try {
+      // Fetch all users from the database
+      const users = await User.find({});
+      // Send the users as the response
+      res.send(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
+// app.post("/details", async (req, res) => {
+//     try {
+//         const { email } = req.body;
+
+//         // Find the user by email
+//         const user = await User.findOne({ email: email });
+//         if (!user) {
+//             return res.status(404).send("User not found");
+//         }
+
+//         // Find the corresponding node by user id
+//         const node = await Node.findOne({ value: user._id });
+//         if (!node) {
+//             return res.status(404).send("Node not found");
+//         }
+
+//         // Collect the emails of adjacent nodes (friends)
+//         const friendList = [];
+//         for (const friendId of node.adjacents) {
+//             const friend = await User.findById(friendId);
+//             if (friend) {
+//                 friendList.push(friend.email);
+//             }
+//         }
+
+//         // Prepare the response data
+
+//         const data = {
+//             uptime: user.uptime,
+//             cpuUsage: node.cpuUsage,
+//             friendList: friendList,
+//             track : node.track
+//         };
+
+//         // Send the response
+//         res.send(data);
+//     } catch (error) {
+//         console.error("Error fetching details:", error);
+//         res.status(500).send("Internal Server Error");
+//     }
+// });
 
 
 app.post("/setUptime", async (req, res) => {
